@@ -8,4 +8,6 @@ public final class HotspotService {
     public List<Map<String,String>> users() throws IOException { return router.execute("/ip/hotspot/user/print", "=.proplist=.id,name,profile,disabled"); }
     public List<Map<String,String>> profiles() throws IOException { return router.execute("/ip/hotspot/user/profile/print", "=.proplist=name"); }
     public List<Map<String,String>> active() throws IOException { return router.execute("/ip/hotspot/active/print", "=.proplist=user,address,uptime"); }
+    public void addUser(String name,String password,String profile) throws IOException { router.execute("/ip/hotspot/user/add","=name="+name,"=password="+password,"=profile="+profile); }
+    public void setDisabled(String id,boolean disabled) throws IOException { router.execute("/ip/hotspot/user/set","=.id="+id,"=disabled="+disabled); }
 }
