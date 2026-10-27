@@ -157,7 +157,12 @@ public final class MainActivity extends Activity {
               if(!found)return "توقفت العملية: الباقة غير موجودة على الراوتر";
               String seqKey="seq_"+Integer.toHexString(routerKey.hashCode());
               android.content.SharedPreferences pref=getSharedPreferences("serials",MODE_PRIVATE);
-              int serial=Math.max(1,pref.getInt(seqKey,1));
+              // The router is the source of truth. Reconcile the local hint with all
+              // existing names before allocating a new range, so another device's
+              // batch cannot be silently reused.
+              List<Map<String,String>> existingUsers=api.execute("/ip/hotspot/user/print","=.proplist=name");
+              int routerNext=nextSerial(existingUsers,prefix);
+              int serial=Math.max(routerNext,pref.getInt(seqKey,1));
               ArrayList<String[]> thisBatch=new ArrayList<>();
               for(int i=0;i<count;i++){
                   String name;
@@ -180,6 +185,17 @@ public final class MainActivity extends Activity {
               synchronized(createdCards){createdCards.clear();createdCards.addAll(thisBatch);}
               return "تم تأكيد إنشاء "+thisBatch.size()+" كرت. اختر المعاينة أو PDF لعرض الأرقام وكلمات المرور.";
           });}).show();
+    }
+    private int nextSerial(List<Map<String,String>> users, String prefix) {
+        long max=0;
+        for(Map<String,String> row:users) {
+            String name=row.get("name");
+            if(name==null || !name.startsWith(prefix)) continue;
+            String suffix=name.substring(prefix.length());
+            if(!suffix.matches("[0-9]+")) continue;
+            try { max=Math.max(max,Long.parseLong(suffix)); } catch(NumberFormatException ignored) { }
+        }
+        return (int)Math.min(Integer.MAX_VALUE, max+1);
     }
     private String generatePassword() {
         byte[] bytes=new byte[6];new java.security.SecureRandom().nextBytes(bytes);
