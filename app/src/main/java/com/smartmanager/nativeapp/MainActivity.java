@@ -138,6 +138,17 @@ public final class MainActivity extends Activity {
         page.addView(text("النتائج",19,true));
         output=text("لا توجد بيانات بعد",14,false);output.setTextIsSelectable(true);page.addView(output);
         page.addView(text("نسخة غير نهائية: الاتصال وHotspot والدفعات والطباعة وبعض قراءات User Manager متاحة. لا تدعم تعديل باقات User Manager v6/v7 أو صيانة قواعده الآلية.",12,false));
+        Button cardsJump=new Button(this); cardsJump.setVisibility(View.GONE); page.addView(cardsJump);
+        cardsJump.setOnClickListener(v->{ for(int i=0;i<page.getChildCount();i++){ View child=page.getChildAt(i); if(child instanceof TextView && "دفعة كروت Hotspot — ترقيم متتابع".contentEquals(((TextView)child).getText())) { scroll.smoothScrollTo(0,child.getTop()); break; } } });
+        final DashboardView[] dashboardRef=new DashboardView[1];
+        DashboardView dashboard=new DashboardView(this,()->runRouter(api->{
+            dashboardRef[0].setLoading();
+            List<Map<String,String>> r=api.execute("/system/resource/print","=.proplist=version,cpu-load,uptime");
+            Map<String,String> m=r.isEmpty()?Collections.emptyMap():r.get(0);
+            dashboardRef[0].setValues(m.getOrDefault("version","غير معروف"),m.getOrDefault("cpu-load","--")+"%",m.getOrDefault("uptime","--"));
+            return "تم تحديث معلومات Dashboard";
+        }),cardsJump);
+        dashboardRef[0]=dashboard; page.addView(dashboard.view(),1);
         ScreenNavigator.attach(this, root, scroll, page);
     }
     private void prepareBatch() {
