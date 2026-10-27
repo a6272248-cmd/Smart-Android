@@ -4,11 +4,8 @@ import android.app.*;
 import android.os.*;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.graphics.pdf.PdfDocument;
 import android.content.*;
 import android.net.Uri;
-import android.provider.DocumentsContract;
-import android.graphics.Paint;
 import android.view.*;
 import android.widget.*;
 import java.util.*;
@@ -201,31 +198,12 @@ public final class MainActivity extends Activity {
     @Override protected void onActivityResult(int request,int result,Intent data){
         super.onActivityResult(request,result,data);
         if(request!=PDF_REQUEST || result!=RESULT_OK || data==null || data.getData()==null)return;
-        PdfDocument doc=new PdfDocument();
         try {
-            ArrayList<String[]> cards; synchronized(createdCards){cards=new ArrayList<>(createdCards);}
-            Paint paint=new Paint(3);int index=0;int pageNumber=1;
-            while(index<cards.size()){
-                PdfDocument.Page pg=doc.startPage(new PdfDocument.PageInfo.Builder(595,842,pageNumber++).create());
-                android.graphics.Canvas canvas=pg.getCanvas();paint.setColor(Color.rgb(12,45,80));paint.setTextSize(19);
-                canvas.drawText("SMART MANAGER - HOTSPOT VOUCHERS",32,40,paint);
-                paint.setTextSize(12);
-                for(int j=0;j<12 && index<cards.size();j++,index++){
-                    String[] c=cards.get(index);int y=74+j*62;
-                    paint.setStyle(Paint.Style.STROKE);paint.setColor(Color.rgb(150,180,195));
-                    canvas.drawRoundRect(26,y,568,y+53,9,9,paint);paint.setStyle(Paint.Style.FILL);
-                    paint.setColor(Color.rgb(15,65,105));paint.setTextSize(13);
-                    canvas.drawText("User: "+c[0]+"     Pass: "+c[1],38,y+22,paint);
-                    paint.setTextSize(10);canvas.drawText("Profile: "+c[2],38,y+40,paint);
-                }
-                doc.finishPage(pg);
-            }
-            try(java.io.OutputStream out=getContentResolver().openOutputStream(data.getData())){
-                if(out==null)throw new java.io.IOException("Cannot open output file");doc.writeTo(out);
-            }
+            ArrayList<String[]> cards;
+            synchronized(createdCards){ cards=new ArrayList<>(createdCards); }
+            PdfService.write(this, data.getData(), cards);
             status.setText("تم تصدير PDF: "+cards.size()+" كرت");
-        }catch(Exception ex){status.setText("فشل تصدير PDF: "+ex.getMessage());}
-        finally{doc.close();}
+        } catch(Exception ex) { status.setText("فشل تصدير PDF: "+ex.getMessage()); }
     }
     private interface Job { String perform(RouterApi api) throws Exception; }
     private void runRouter(Job job) {
