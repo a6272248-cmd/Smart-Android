@@ -146,6 +146,12 @@ public final class MainActivity extends Activity {
             List<Map<String,String>> r=api.execute("/system/resource/print","=.proplist=version,cpu-load,uptime");
             Map<String,String> m=r.isEmpty()?Collections.emptyMap():r.get(0);
             dashboardRef[0].setValues(m.getOrDefault("version","غير معروف"),m.getOrDefault("cpu-load","--")+"%",m.getOrDefault("uptime","--"));
+            int hotspotCount=api.execute("/ip/hotspot/active/print","=.proplist=.id").size();
+            int pppoeCount=api.execute("/ppp/active/print","=.proplist=.id").size();
+            String ver=m.getOrDefault("version",""); int managerCount=-1;
+            try { managerCount=api.execute(ver.startsWith("6.")?"/tool/user-manager/user/print":"/user-manager/user/print","=.proplist=.id").size(); }
+            catch(java.io.IOException unsupported) { /* package or permission unavailable */ }
+            dashboardRef[0].setStats(String.valueOf(hotspotCount),String.valueOf(pppoeCount),managerCount<0?"غير مدعوم":String.valueOf(managerCount));
             return "تم تحديث معلومات Dashboard";
         }),cardsJump);
         dashboardRef[0]=dashboard; page.addView(dashboard.view(),1);
