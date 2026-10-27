@@ -10,4 +10,7 @@ public final class HotspotService {
     public List<Map<String,String>> active() throws IOException { return router.execute("/ip/hotspot/active/print", "=.proplist=user,address,uptime"); }
     public void addUser(String name,String password,String profile) throws IOException { router.execute("/ip/hotspot/user/add","=name="+name,"=password="+password,"=profile="+profile); }
     public void setDisabled(String id,boolean disabled) throws IOException { router.execute("/ip/hotspot/user/set","=.id="+id,"=disabled="+disabled); }
+    public void updateUser(String id,String profile) throws IOException { router.execute("/ip/hotspot/user/set","=.id="+id,"=profile="+profile); }
+    public void removeUser(String id) throws IOException { router.execute("/ip/hotspot/user/remove","=.id="+id); }
+    public void disconnect(String id) throws IOException { router.execute("/ip/hotspot/active/remove","=.id="+id); }
 }
