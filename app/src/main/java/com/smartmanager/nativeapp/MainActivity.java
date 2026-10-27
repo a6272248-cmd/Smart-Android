@@ -20,6 +20,7 @@ public final class MainActivity extends Activity {
     private CheckBox tls;
     private TextView output, status;
     private LinearLayout page;
+    private FrameLayout root;
     private final int NAVY=Color.rgb(15,36,66), BLUE=Color.rgb(15,110,214);
     private volatile String version="";
     private boolean operationRunning=false;
@@ -43,8 +44,8 @@ public final class MainActivity extends Activity {
         super.onCreate(b); getWindow().setStatusBarColor(NAVY);getWindow().setNavigationBarColor(NAVY);
         ScrollView scroll=new ScrollView(this);scroll.setFillViewport(true);
         page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);page.setPadding(22,26,22,38);
-        page.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);page.setBackgroundColor(Color.rgb(244,248,252));scroll.addView(page);
-        setContentView(scroll);
+        page.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);page.setBackgroundColor(Color.rgb(237,244,250));scroll.addView(page);
+        root=new FrameLayout(this);root.setBackgroundColor(Color.rgb(237,244,250));root.addView(scroll,new FrameLayout.LayoutParams(-1,-1));setContentView(root);
         TextView title=text("Smart Manager  |  مدير الشبكات",23,true);title.setTextColor(BLUE);page.addView(title);
         page.addView(text("تطبيق Android مستقل يتصل مباشرة براوتر MikroTik داخل الشبكة المحلية",14,false));
         android.content.SharedPreferences settings=getSharedPreferences("router_connection",MODE_PRIVATE);
@@ -137,6 +138,7 @@ public final class MainActivity extends Activity {
         page.addView(text("النتائج",19,true));
         output=text("لا توجد بيانات بعد",14,false);output.setTextIsSelectable(true);page.addView(output);
         page.addView(text("نسخة غير نهائية: الاتصال وHotspot والدفعات والطباعة وبعض قراءات User Manager متاحة. لا تدعم تعديل باقات User Manager v6/v7 أو صيانة قواعده الآلية.",12,false));
+        ScreenNavigator.attach(this, root, scroll, page);
     }
     private void prepareBatch() {
         final String prefix=batchPrefix.getText().toString().trim(), profile=batchProfile.getText().toString().trim();
