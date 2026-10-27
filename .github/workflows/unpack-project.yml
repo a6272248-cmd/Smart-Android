@@ -1,0 +1,60 @@
+name: Extract Android project ZIP
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'Smart-Android-GITHUB-UPLOAD-TESTED-SOURCE.zip'
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Verify and extract ZIP safely
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import zipfile, pathlib
+          archive = pathlib.Path('Smart-Android-GITHUB-UPLOAD-TESTED-SOURCE.zip')
+          if not archive.is_file():
+              raise SystemExit('ZIP file not found in repository root')
+          with zipfile.ZipFile(archive) as z:
+              bad = z.testzip()
+              if bad:
+                  raise SystemExit('Bad archive member: ' + bad)
+              root = pathlib.Path.cwd().resolve()
+              for item in z.infolist():
+                  p = pathlib.PurePosixPath(item.filename)
+                  if p.is_absolute() or '..' in p.parts or '\\' in item.filename:
+                      raise SystemExit('Unsafe archive path: ' + item.filename)
+                  target = (root / item.filename).resolve()
+                  if not target.is_relative_to(root):
+                      raise SystemExit('Unsafe extraction path')
+                  if (item.external_attr >> 16) & 0o170000 == 0o120000:
+                      raise SystemExit('Symlink not allowed')
+              z.extractall(root)
+          for path in ('app/build.gradle', 'settings.gradle', '.github/workflows/android-build.yml'):
+              if not (root / path).is_file():
+                  raise SystemExit('Expected Android file missing: '+path)
+          print('Project extracted successfully')
+          PY
+      - name: Commit extracted source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A -- app tests .github/workflows/android-build.yml README-AR.md build.gradle settings.gradle gradle.properties .gitignore
+          if git diff --cached --quiet; then
+            echo 'No changes to commit'
+          else
+            git commit -m 'Extract Smart Manager Android source from ZIP'
+            git push
+          fi
