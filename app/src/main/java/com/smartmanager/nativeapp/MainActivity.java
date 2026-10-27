@@ -26,6 +26,7 @@ public final class MainActivity extends Activity {
     private final int NAVY=Color.rgb(15,36,66), BLUE=Color.rgb(15,110,214);
     private volatile String version="";
     private boolean operationRunning=false;
+    private SecureConnectionStore secureConnectionStore;
 
     private TextView text(String s, int size, boolean bold) {
         TextView t=new TextView(this);t.setText(s);t.setTextSize(size);t.setTextColor(NAVY);
@@ -50,10 +51,14 @@ public final class MainActivity extends Activity {
         TextView title=text("Smart Manager  |  مدير الشبكات",23,true);title.setTextColor(BLUE);page.addView(title);
         page.addView(text("تطبيق Android مستقل يتصل مباشرة براوتر MikroTik داخل الشبكة المحلية",14,false));
         android.content.SharedPreferences settings=getSharedPreferences("router_connection",MODE_PRIVATE);
+        secureConnectionStore=new SecureConnectionStore(this);
+        String savedPassword="";
+        try { String value=secureConnectionStore.get(); if(value!=null) savedPassword=value; }
+        catch(Exception ignored) { /* Keystore reset or tampered data: require re-entry. */ }
         host=entry("عنوان الراوتر IP أو DNS", settings.getString("host","192.168.88.1"),  android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_URI);
         port=entry("منفذ API", settings.getString("port","8728"), android.text.InputType.TYPE_CLASS_NUMBER);
         user=entry("اسم مستخدم الراوتر", settings.getString("user","admin"), android.text.InputType.TYPE_CLASS_TEXT);
-        pass=entry("كلمة المرور", "", android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        pass=entry("كلمة المرور", savedPassword, android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
         tls=new CheckBox(this);tls.setChecked(settings.getBoolean("tls",false));tls.setText("اتصال TLS آمن (شهادة موثوقة)");page.addView(tls);
         page.addView(text("ملاحظة: 8729 لا يُفعّل TLS تلقائيًا؛ حدد النوع والمنفذ الصحيحين. اتصال 8728 غير مشفر.",12,false));
         button("حفظ عنوان الراوتر والإعدادات (دون كلمة المرور)",()->{
@@ -61,7 +66,9 @@ public final class MainActivity extends Activity {
                 .putString("port",port.getText().toString().trim())
                 .putString("user",user.getText().toString().trim())
                 .putBoolean("tls",tls.isChecked()).apply();
-            Toast.makeText(this,"حُفظت الإعدادات دون كلمة المرور",Toast.LENGTH_SHORT).show();
+            try { secureConnectionStore.put(pass.getText().toString());
+                Toast.makeText(this,"حُفظت الإعدادات مع تشفير كلمة المرور",Toast.LENGTH_SHORT).show();
+            } catch(Exception ex) { Toast.makeText(this,"تعذر حفظ كلمة المرور بشكل آمن",Toast.LENGTH_LONG).show(); }
         });
         status=text("غير متصل",14,true);page.addView(status);
         button("اختبار الاتصال ومعلومات الراوتر",()->runRouter(api->{
