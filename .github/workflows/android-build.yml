@@ -30,9 +30,10 @@ jobs:
       - name: Test MikroTik API
         run: |
           mkdir -p /tmp/sm-tests
-          javac -d /tmp/sm-tests app/src/main/java/com/smartmanager/nativeapp/RouterApi.java tests/ApiProtocolTest.java tests/ApiMockServerTest.java
+          javac -d /tmp/sm-tests app/src/main/java/com/smartmanager/nativeapp/RouterApi.java app/src/main/java/com/smartmanager/nativeapp/VoucherService.java tests/ApiProtocolTest.java tests/ApiMockServerTest.java tests/VoucherServiceTest.java
           java -cp /tmp/sm-tests ApiProtocolTest
           java -cp /tmp/sm-tests ApiMockServerTest
+          java -cp /tmp/sm-tests VoucherServiceTest
 
       - name: Build APK
         run: gradle --no-daemon assembleDebug

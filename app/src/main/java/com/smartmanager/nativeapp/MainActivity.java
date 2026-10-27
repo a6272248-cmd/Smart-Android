@@ -161,7 +161,7 @@ public final class MainActivity extends Activity {
               // existing names before allocating a new range, so another device's
               // batch cannot be silently reused.
               List<Map<String,String>> existingUsers=api.execute("/ip/hotspot/user/print","=.proplist=name");
-              int routerNext=nextSerial(existingUsers,prefix);
+              int routerNext=VoucherService.nextSerial(existingUsers,prefix);
               int serial=Math.max(routerNext,pref.getInt(seqKey,1));
               ArrayList<String[]> thisBatch=new ArrayList<>();
               for(int i=0;i<count;i++){
@@ -174,7 +174,7 @@ public final class MainActivity extends Activity {
                       synchronized(createdCards){createdCards.clear();createdCards.addAll(thisBatch);}
                       return "توقفت الدفعة: الرقم "+name+" موجود على الراوتر. تم تأكيد إنشاء "+thisBatch.size()+" فقط؛ راجع الأسماء قبل إعادة المحاولة.";
                   }
-                  String password=generatePassword();
+                  String password=VoucherService.password();
                   try {api.execute("/ip/hotspot/user/add","=name="+name,"=password="+password,"=profile="+profile);
                        thisBatch.add(new String[]{name,password,profile});}
                   catch(java.io.IOException ex){
@@ -185,21 +185,6 @@ public final class MainActivity extends Activity {
               synchronized(createdCards){createdCards.clear();createdCards.addAll(thisBatch);}
               return "تم تأكيد إنشاء "+thisBatch.size()+" كرت. اختر المعاينة أو PDF لعرض الأرقام وكلمات المرور.";
           });}).show();
-    }
-    private int nextSerial(List<Map<String,String>> users, String prefix) {
-        long max=0;
-        for(Map<String,String> row:users) {
-            String name=row.get("name");
-            if(name==null || !name.startsWith(prefix)) continue;
-            String suffix=name.substring(prefix.length());
-            if(!suffix.matches("[0-9]+")) continue;
-            try { max=Math.max(max,Long.parseLong(suffix)); } catch(NumberFormatException ignored) { }
-        }
-        return (int)Math.min(Integer.MAX_VALUE, max+1);
-    }
-    private String generatePassword() {
-        byte[] bytes=new byte[6];new java.security.SecureRandom().nextBytes(bytes);
-        StringBuilder b=new StringBuilder();for(byte v:bytes)b.append((char)('0'+(v&255)%10));return b.toString();
     }
     private void showCards(){
         StringBuilder b=new StringBuilder("معاينة الكروت المنشأة على هذا الهاتف\n\n");
