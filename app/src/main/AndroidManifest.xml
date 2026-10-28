@@ -12,6 +12,7 @@
   <activity android:name=".MonitoringActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
   <activity android:name=".ManagementActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
   <activity android:name=".CardsActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+  <activity android:name=".CardOperationsActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
   <activity android:name=".BatchHistoryActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
  </application>
 </manifest>
