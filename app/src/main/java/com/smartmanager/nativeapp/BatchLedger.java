@@ -12,7 +12,7 @@ public final class BatchLedger {
         public Card(String router,String name,String password,String profile,State state){this.router=clean(router);this.name=clean(name);this.password=clean(password);this.profile=clean(profile);this.state=state;}
         private static String clean(String s){return s==null?"":s.replace("|","_").replace("\n","_").replace("\r","_");}
         String encode(){return router+"|"+name+"|"+password+"|"+profile+"|"+state.name();}
-        static Card decode(String line){String[] p=line.split("\\|",-1);if(p.length!=5)throw new IllegalArgumentException("Invalid batch record");return new Card(p[0],p[1],p[2],p[3],State.valueOf(p[4]));}
+    static Card decode(String line){String[] p=line.split("\\|",-1);if(p.length==4)return new Card("legacy",p[0],p[1],p[2],State.valueOf(p[3]));if(p.length!=5)throw new IllegalArgumentException("Invalid batch record");return new Card(p[0],p[1],p[2],p[3],State.valueOf(p[4]));}
     }
     private final List<Card> cards=new ArrayList<>();
     public void addPending(String router,String name,String password,String profile){if(find(router,name)!=null)throw new IllegalArgumentException("Duplicate card");cards.add(new Card(router,name,password,profile,State.PENDING));}
