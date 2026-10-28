@@ -12,6 +12,20 @@ on:
     branches: [main, codex/development-audit]
 
 jobs:
+  visual-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate code-based visual mockups
+        run: ./tools/visual_review.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartManager-Android-Visual-Review
+          path: |
+            SmartManager-Android-Visual-Review.zip
+            visual-review/SmartManager-Visual-Contact-Sheet.png
+          if-no-files-found: error
+
   android:
     runs-on: ubuntu-latest
     steps:
