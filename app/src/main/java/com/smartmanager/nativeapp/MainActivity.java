@@ -15,6 +15,15 @@ public final class MainActivity extends Activity {
   TextView heading=text("Smart MikroTik Manager",24,true);heading.setGravity(Gravity.CENTER_VERTICAL);page.addView(heading);
   page.addView(text("إدارة الشبكة والكروت من مكان واحد",15,false));
   android.content.SharedPreferences prefs=getSharedPreferences("router_connection",MODE_PRIVATE);
+  page.addView(text("الوصول السريع",19,true));
+  LinearLayout shortcuts=new LinearLayout(this);shortcuts.setOrientation(LinearLayout.HORIZONTAL);page.addView(shortcuts);
+  tile(shortcuts,"الكروت والدفعات",()->startActivity(new Intent(this,CardsActivity.class)));
+  tile(shortcuts,"Hotspot",()->open("hotspot"));
+  tile(shortcuts,"PPPoE",()->open("pppoe"));
+  LinearLayout shortcuts2=new LinearLayout(this);shortcuts2.setOrientation(LinearLayout.HORIZONTAL);page.addView(shortcuts2);
+  tile(shortcuts2,"User Manager",()->open("usermanager"));
+  tile(shortcuts2,"الراوترات",()->startActivity(new Intent(this,RouterProfilesActivity.class)));
+  tile(shortcuts2,"التقارير",()->monitor("reports"));
   LinearLayout connection=panel("اتصال الراوتر");
   connection.addView(text("أدخل بيانات الراوتر، ثم احفظ الاتصال واختبره",14,false));
   host=field(connection,"عنوان الراوتر أو IP",prefs.getString("host",""));
@@ -26,15 +35,6 @@ public final class MainActivity extends Activity {
   action(connection,"حفظ واختبار الاتصال",BLUE,this::saveAndTest);
   status=text("غير متصل",17,true);connection.addView(status);
   summary=text("سيظهر إصدار RouterOS ومعلومات الجهاز بعد الاتصال",14,false);connection.addView(summary);
-  page.addView(text("الوصول السريع",19,true));
-  LinearLayout shortcuts=new LinearLayout(this);shortcuts.setOrientation(LinearLayout.HORIZONTAL);page.addView(shortcuts);
-  tile(shortcuts,"الكروت والدفعات",()->startActivity(new Intent(this,CardsActivity.class)));
-  tile(shortcuts,"Hotspot",()->open("hotspot"));
-  tile(shortcuts,"PPPoE",()->open("pppoe"));
-  LinearLayout shortcuts2=new LinearLayout(this);shortcuts2.setOrientation(LinearLayout.HORIZONTAL);page.addView(shortcuts2);
-  tile(shortcuts2,"User Manager",()->open("usermanager"));
-  tile(shortcuts2,"الراوترات",()->startActivity(new Intent(this,RouterProfilesActivity.class)));
-  tile(shortcuts2,"التقارير",()->monitor("reports"));
   page.addView(text("الكروت والطباعة",19,true));
   LinearLayout print=panel("إدارة البطاقات");
   action(print,"إنشاء الكروت والدفعات",BLUE,()->startActivity(new Intent(this,CardsActivity.class)));
@@ -44,12 +44,9 @@ public final class MainActivity extends Activity {
   action(services,"تحديث معلومات الراوتر",BLUE,this::refresh);
   action(services,"الجلسات والمتصلون",BLUE,()->open("sessions"));
   action(services,"المراقبة",BLUE,()->monitor("monitoring"));
-  action(services,"Interfaces",BLUE,()->network("interfaces"));
-  action(services,"IP Addresses",BLUE,()->network("ip"));
-  action(services,"DHCP",BLUE,()->network("dhcp"));
-  action(services,"DNS",BLUE,()->network("dns"));
-  action(services,"Queues",BLUE,()->network("queues"));
-  action(services,"Firewall (قراءة)",BLUE,()->network("firewall"));
+  serviceRow(services,"Interfaces",()->network("interfaces"),"IP Addresses",()->network("ip"));
+  serviceRow(services,"DHCP",()->network("dhcp"),"DNS",()->network("dns"));
+  serviceRow(services,"Queues",()->network("queues"),"Firewall (قراءة)",()->network("firewall"));
   action(services,"الإعدادات",BLUE,()->open("settings"));
  }
  private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}
@@ -68,6 +65,15 @@ public final class MainActivity extends Activity {
   TextView t=text(label,14,true);t.setGravity(Gravity.CENTER);t.setTextColor(NAVY);t.setMinHeight(dp(88));
   android.graphics.drawable.GradientDrawable bg=new android.graphics.drawable.GradientDrawable();bg.setColor(Color.WHITE);bg.setCornerRadius(dp(14));bg.setStroke(dp(1),Color.rgb(215,229,241));t.setBackground(bg);
   LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(92),1);lp.setMargins(dp(3),dp(5),dp(3),dp(5));parent.addView(t,lp);t.setOnClickListener(v->run.run());
+ }
+ private void serviceRow(LinearLayout parent,String one,Runnable first,String two,Runnable second){
+  LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);parent.addView(row);
+  serviceTile(row,one,first);serviceTile(row,two,second);
+ }
+ private void serviceTile(LinearLayout parent,String title,Runnable callback){
+  TextView tile=text(title,15,true);tile.setGravity(Gravity.CENTER);tile.setMinHeight(dp(56));
+  android.graphics.drawable.GradientDrawable bg=new android.graphics.drawable.GradientDrawable();bg.setColor(ICE);bg.setCornerRadius(dp(10));bg.setStroke(dp(1),Color.rgb(205,221,237));tile.setBackground(bg);
+  LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(58),1);lp.setMargins(dp(3),dp(4),dp(3),dp(4));parent.addView(tile,lp);tile.setOnClickListener(v->callback.run());
  }
  private EditText field(LinearLayout parent,String hint,String value){
   TextView label=text(hint,14,true);parent.addView(label);EditText e=new EditText(this);e.setSingleLine(true);e.setTextSize(17);e.setHint(hint);e.setText(value);e.setPadding(dp(12),dp(6),dp(12),dp(6));parent.addView(e,new LinearLayout.LayoutParams(-1,dp(52)));return e;
