@@ -14,6 +14,8 @@ public final class MainActivity extends Activity {
   page.addView(banner,new LinearLayout.LayoutParams(-1,dp(138)));
   TextView heading=text("Smart MikroTik Manager",24,true);heading.setGravity(Gravity.CENTER_VERTICAL);page.addView(heading);
 
+  LinearLayout stats=new LinearLayout(this);stats.setOrientation(LinearLayout.HORIZONTAL);stats.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);page.addView(stats);
+  stat(stats,"PPPoE نشط","—");stat(stats,"Hotspot نشط","—");stat(stats,"User Manager","—");
   LinearLayout statusPanel=panel("حالة الراوتر");
   status=text("غير متصل",17,true);statusPanel.addView(status);
   summary=text("معلومات الراوتر غير متاحة حتى يتم اختبار الاتصال",14,false);statusPanel.addView(summary);
@@ -45,6 +47,7 @@ public final class MainActivity extends Activity {
   nav("المزيد",()->showMore());
 
  }
+ private void stat(LinearLayout parent,String name,String value){LinearLayout cell=new LinearLayout(this);cell.setOrientation(LinearLayout.VERTICAL);cell.setGravity(Gravity.CENTER);cell.setPadding(dp(4),dp(8),dp(4),dp(8));android.graphics.drawable.GradientDrawable bg=new android.graphics.drawable.GradientDrawable();bg.setColor(Color.rgb(13,38,69));bg.setCornerRadius(dp(12));bg.setStroke(dp(1),Color.rgb(34,79,119));cell.setBackground(bg);LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(84),1);lp.setMargins(dp(3),dp(6),dp(3),dp(6));parent.addView(cell,lp);TextView number=text(value,20,true);number.setGravity(Gravity.CENTER);cell.addView(number);TextView label=text(name,12,false);label.setGravity(Gravity.CENTER);cell.addView(label);}
  private void nav(String label,Runnable callback){TextView item=text(label,12,true);item.setGravity(Gravity.CENTER);item.setMinHeight(dp(52));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(54),1);lp.setMargins(dp(2),0,dp(2),0);navBar.addView(item,lp);item.setOnClickListener(v->callback.run());}
  private void showUsers(){String[] items={"Hotspot","PPPoE","User Manager","الجلسات والمتصلون"};new AlertDialog.Builder(this).setTitle("إدارة المستخدمين").setItems(items,(d,i)->{switch(i){case 0:open("hotspot");break;case 1:open("pppoe");break;case 2:open("usermanager");break;default:open("sessions");}}).show();}
  private void showNetwork(){String[] items={"Interfaces","IP Addresses","DHCP","DNS","Queues","Firewall (قراءة)","المراقبة"};String[] keys={"interfaces","ip","dhcp","dns","queues","firewall"};new AlertDialog.Builder(this).setTitle("إدارة الشبكة").setItems(items,(d,i)->{if(i<keys.length)network(keys[i]);else monitor("monitoring");}).show();}
