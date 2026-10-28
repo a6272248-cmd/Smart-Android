@@ -30,13 +30,14 @@ jobs:
       - name: Test MikroTik API
         run: |
           mkdir -p /tmp/sm-tests
-          javac -d /tmp/sm-tests app/src/main/java/com/smartmanager/nativeapp/RouterApi.java app/src/main/java/com/smartmanager/nativeapp/RouterService.java app/src/main/java/com/smartmanager/nativeapp/VoucherService.java app/src/main/java/com/smartmanager/nativeapp/UserManagerService.java tests/ApiProtocolTest.java tests/ApiMockServerTest.java tests/VoucherServiceTest.java tests/UserManagerServiceTest.java tests/CommandValidationTest.java tests/StateToggleTest.java
+          javac -d /tmp/sm-tests app/src/main/java/com/smartmanager/nativeapp/RouterApi.java app/src/main/java/com/smartmanager/nativeapp/RouterService.java app/src/main/java/com/smartmanager/nativeapp/VoucherService.java app/src/main/java/com/smartmanager/nativeapp/UserManagerService.java app/src/main/java/com/smartmanager/nativeapp/BatchLedger.java tests/ApiProtocolTest.java tests/ApiMockServerTest.java tests/VoucherServiceTest.java tests/UserManagerServiceTest.java tests/CommandValidationTest.java tests/StateToggleTest.java tests/BatchLedgerTest.java
           java -cp /tmp/sm-tests ApiProtocolTest
           java -cp /tmp/sm-tests ApiMockServerTest
           java -cp /tmp/sm-tests VoucherServiceTest
           java -cp /tmp/sm-tests UserManagerServiceTest
           java -cp /tmp/sm-tests CommandValidationTest
           java -cp /tmp/sm-tests StateToggleTest
+          java -cp /tmp/sm-tests BatchLedgerTest
 
       - name: Build APK
         run: gradle --no-daemon assembleDebug
