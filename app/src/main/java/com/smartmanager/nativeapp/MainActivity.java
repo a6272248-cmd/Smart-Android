@@ -13,13 +13,13 @@ public final class MainActivity extends Activity {
   android.widget.ImageView banner=new android.widget.ImageView(this);banner.setImageResource(R.drawable.smart_manager_banner);banner.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);banner.setContentDescription("Smart Manager");
   page.addView(banner,new LinearLayout.LayoutParams(-1,dp(138)));
   TextView heading=text("Smart MikroTik Manager",24,true);heading.setGravity(Gravity.CENTER_VERTICAL);page.addView(heading);
-  page.addView(text("إدارة الشبكة والكروت من مكان واحد",15,false));
+
   LinearLayout statusPanel=panel("حالة الراوتر");
   status=text("غير متصل",17,true);statusPanel.addView(status);
   summary=text("معلومات الراوتر غير متاحة حتى يتم اختبار الاتصال",14,false);statusPanel.addView(summary);
   action(statusPanel,"إعداد الاتصال بالراوتر",BLUE,()->{connectionCard.setVisibility(connectionCard.getVisibility()==View.VISIBLE?View.GONE:View.VISIBLE);});
   android.content.SharedPreferences prefs=getSharedPreferences("router_connection",MODE_PRIVATE);
-  page.addView(text("الوصول السريع",19,true));
+  page.addView(text("الأقسام الرئيسية",19,true));
   LinearLayout shortcuts=new LinearLayout(this);shortcuts.setOrientation(LinearLayout.HORIZONTAL);page.addView(shortcuts);
   tile(shortcuts,"الكروت والدفعات",()->startActivity(new Intent(this,CardsActivity.class)));
   tile(shortcuts,"Hotspot",()->open("hotspot"));
@@ -39,13 +39,15 @@ public final class MainActivity extends Activity {
   action(connection,"حفظ واختبار الاتصال",BLUE,this::saveAndTest);
   // Connection configuration is intentionally a separate expandable panel, not part of the home feed.
   nav("الرئيسية",()->{scroll.smoothScrollTo(0,0);});
-  nav("المستخدمون",()->open("hotspot"));
+  nav("المستخدمون",()->showUsers());
   nav("الكروت",()->startActivity(new Intent(this,CardsActivity.class)));
-  nav("الشبكة",()->network("interfaces"));
+  nav("الشبكة",()->showNetwork());
   nav("المزيد",()->showMore());
 
  }
  private void nav(String label,Runnable callback){TextView item=text(label,12,true);item.setGravity(Gravity.CENTER);item.setMinHeight(dp(52));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(54),1);lp.setMargins(dp(2),0,dp(2),0);navBar.addView(item,lp);item.setOnClickListener(v->callback.run());}
+ private void showUsers(){String[] items={"Hotspot","PPPoE","User Manager","الجلسات والمتصلون"};new AlertDialog.Builder(this).setTitle("إدارة المستخدمين").setItems(items,(d,i)->{switch(i){case 0:open("hotspot");break;case 1:open("pppoe");break;case 2:open("usermanager");break;default:open("sessions");}}).show();}
+ private void showNetwork(){String[] items={"Interfaces","IP Addresses","DHCP","DNS","Queues","Firewall (قراءة)","المراقبة"};String[] keys={"interfaces","ip","dhcp","dns","queues","firewall"};new AlertDialog.Builder(this).setTitle("إدارة الشبكة").setItems(items,(d,i)->{if(i<keys.length)network(keys[i]);else monitor("monitoring");}).show();}
  private void showMore(){String[] choices={"الراوترات المحفوظة","اتصال الراوتر","أرشيف الدفعات","المراقبة","التقارير","الجلسات والمتصلون","إعدادات الشبكة","الإعدادات"};new AlertDialog.Builder(this).setTitle("المزيد").setItems(choices,(d,i)->{switch(i){case 0:startActivity(new Intent(this,RouterProfilesActivity.class));break;case 1:connectionCard.setVisibility(View.VISIBLE);break;case 2:startActivity(new Intent(this,BatchHistoryActivity.class));break;case 3:monitor("monitoring");break;case 4:monitor("reports");break;case 5:open("sessions");break;case 6:network("dhcp");break;default:open("settings");}}).show();}
  private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}
  private int TEAL(){return Color.rgb(0,150,150);}
