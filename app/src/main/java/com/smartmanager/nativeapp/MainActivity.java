@@ -3,7 +3,7 @@ package com.smartmanager.nativeapp;
 import android.app.*;import android.os.*;import android.content.*;import android.graphics.Color;import android.graphics.Typeface;import android.view.*;import android.widget.*;import java.util.*;import java.util.concurrent.*;
 /** Compact native dashboard. Feature screens live in dedicated Activities. */
 public final class MainActivity extends Activity {
- private final ExecutorService worker=Executors.newSingleThreadExecutor(); private LinearLayout page; private TextView status,summary; private EditText host,port,user,pass; private CheckBox tls; private boolean running; private final int NAVY=Color.rgb(22,47,80),BLUE=Color.rgb(23,103,177),ICE=Color.rgb(237,244,250);
+ private LinearLayout connectionCard; private final ExecutorService worker=Executors.newSingleThreadExecutor(); private LinearLayout page; private TextView status,summary; private EditText host,port,user,pass; private CheckBox tls; private boolean running; private final int NAVY=Color.rgb(22,47,80),BLUE=Color.rgb(23,103,177),ICE=Color.rgb(237,244,250);
  @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(NAVY);build();}
 
  private void build(){
@@ -14,6 +14,9 @@ public final class MainActivity extends Activity {
   page.addView(banner,new LinearLayout.LayoutParams(-1,dp(118)));
   TextView heading=text("Smart MikroTik Manager",24,true);heading.setGravity(Gravity.CENTER_VERTICAL);page.addView(heading);
   page.addView(text("إدارة الشبكة والكروت من مكان واحد",15,false));
+  LinearLayout statusPanel=panel("حالة الراوتر");
+  TextView connectionHint=text("معلومات الاتصال تُعرض بعد اختبار الراوتر",14,false);statusPanel.addView(connectionHint);
+  action(statusPanel,"إعداد الاتصال بالراوتر",BLUE,()->{connectionCard.setVisibility(connectionCard.getVisibility()==View.VISIBLE?View.GONE:View.VISIBLE);});
   android.content.SharedPreferences prefs=getSharedPreferences("router_connection",MODE_PRIVATE);
   page.addView(text("الوصول السريع",19,true));
   LinearLayout shortcuts=new LinearLayout(this);shortcuts.setOrientation(LinearLayout.HORIZONTAL);page.addView(shortcuts);
@@ -24,7 +27,7 @@ public final class MainActivity extends Activity {
   tile(shortcuts2,"User Manager",()->open("usermanager"));
   tile(shortcuts2,"الراوترات",()->startActivity(new Intent(this,RouterProfilesActivity.class)));
   tile(shortcuts2,"التقارير",()->monitor("reports"));
-  LinearLayout connection=panel("اتصال الراوتر");
+  LinearLayout connection=panel("اتصال الراوتر");connectionCard=connection;connection.setVisibility(View.GONE);
   connection.addView(text("أدخل بيانات الراوتر، ثم احفظ الاتصال واختبره",14,false));
   host=field(connection,"عنوان الراوتر أو IP",prefs.getString("host",""));
   port=field(connection,"منفذ API",prefs.getString("port","8728"));
