@@ -5,14 +5,77 @@ import android.app.*;import android.os.*;import android.content.*;import android
 public final class MainActivity extends Activity {
  private final ExecutorService worker=Executors.newSingleThreadExecutor(); private LinearLayout page; private TextView status,summary; private EditText host,port,user,pass; private CheckBox tls; private boolean running; private final int NAVY=Color.rgb(22,47,80),BLUE=Color.rgb(23,103,177),ICE=Color.rgb(237,244,250);
  @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(NAVY);build();}
- private void build(){ScrollView scroll=new ScrollView(this);page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);page.setPadding(20,18,20,30);page.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);page.setBackgroundColor(ICE);scroll.addView(page);setContentView(scroll);TextView title=text("Smart Manager",25,true);title.setTextColor(BLUE);page.addView(title);page.addView(text("لوحة إدارة MikroTik الأصلية",14,false));
-  android.content.SharedPreferences p=getSharedPreferences("router_connection",MODE_PRIVATE);host=field("عنوان الراوتر",p.getString("host",""));port=field("منفذ API",p.getString("port","8728"));user=field("اسم المستخدم",p.getString("user","admin"));String saved="";try{saved=new SecureConnectionStore(this).get();}catch(Exception ignored){}pass=field("كلمة المرور",saved);pass.setInputType(0x81);tls=new CheckBox(this);tls.setText("TLS بشهادة موثوقة");tls.setChecked(p.getBoolean("tls",false));page.addView(tls);button("حفظ الاتصال واختباره",this::saveAndTest);status=text("غير متصل",14,true);page.addView(status);summary=text("اتصل لعرض معلومات الراوتر الحقيقية",14,false);page.addView(summary);
-  page.addView(text("الوحدات",19,true));button("الراوترات والاتصال",()->startActivity(new Intent(this,RouterProfilesActivity.class)));button("Dashboard ومعلومات الراوتر",this::refresh);button("Interfaces",()->network("interfaces"));button("IP Addresses",()->network("ip"));button("DHCP",()->network("dhcp"));button("DNS",()->network("dns"));button("Queues",()->network("queues"));button("Firewall",()->network("firewall"));button("Hotspot",()->open("hotspot"));button("PPPoE",()->open("pppoe"));button("User Manager",()->open("usermanager"));button("الكروت والدفعات",()->startActivity(new Intent(this,CardsActivity.class)));button("سجل الدفعات المشفر",()->startActivity(new Intent(this,BatchHistoryActivity.class)));button("الجلسات والتقارير",()->open("sessions"));button("المراقبة",()->monitor("monitoring"));button("التقارير",()->monitor("reports"));button("الإعدادات",()->open("settings"));
+
+ private void build(){
+  ScrollView scroll=new ScrollView(this);scroll.setFillViewport(true);
+  page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);page.setPadding(dp(16),dp(14),dp(16),dp(26));page.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);page.setBackgroundColor(ICE);
+  scroll.addView(page);setContentView(scroll);
+  android.widget.ImageView banner=new android.widget.ImageView(this);banner.setImageResource(R.drawable.smart_manager_banner);banner.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);banner.setContentDescription("Smart Manager");
+  page.addView(banner,new LinearLayout.LayoutParams(-1,dp(118)));
+  TextView heading=text("Smart MikroTik Manager",24,true);heading.setGravity(Gravity.CENTER_VERTICAL);page.addView(heading);
+  page.addView(text("إدارة الشبكة والكروت من مكان واحد",15,false));
+  android.content.SharedPreferences prefs=getSharedPreferences("router_connection",MODE_PRIVATE);
+  LinearLayout connection=panel("اتصال الراوتر");
+  connection.addView(text("أدخل بيانات الراوتر، ثم احفظ الاتصال واختبره",14,false));
+  host=field(connection,"عنوان الراوتر أو IP",prefs.getString("host",""));
+  port=field(connection,"منفذ API",prefs.getString("port","8728"));
+  user=field(connection,"اسم المستخدم",prefs.getString("user","admin"));
+  pass=field(connection,"كلمة المرور (اتركها فارغة للإبقاء على المحفوظة)","");
+  pass.setInputType(0x81);
+  tls=new CheckBox(this);tls.setText("اتصال API مشفّر TLS");tls.setTextSize(16);tls.setChecked(prefs.getBoolean("tls",false));connection.addView(tls);
+  action(connection,"حفظ واختبار الاتصال",BLUE,this::saveAndTest);
+  status=text("غير متصل",17,true);connection.addView(status);
+  summary=text("سيظهر إصدار RouterOS ومعلومات الجهاز بعد الاتصال",14,false);connection.addView(summary);
+  page.addView(text("الوصول السريع",19,true));
+  LinearLayout shortcuts=new LinearLayout(this);shortcuts.setOrientation(LinearLayout.HORIZONTAL);page.addView(shortcuts);
+  tile(shortcuts,"الكروت والدفعات",()->startActivity(new Intent(this,CardsActivity.class)));
+  tile(shortcuts,"Hotspot",()->open("hotspot"));
+  tile(shortcuts,"PPPoE",()->open("pppoe"));
+  LinearLayout shortcuts2=new LinearLayout(this);shortcuts2.setOrientation(LinearLayout.HORIZONTAL);page.addView(shortcuts2);
+  tile(shortcuts2,"User Manager",()->open("usermanager"));
+  tile(shortcuts2,"الراوترات",()->startActivity(new Intent(this,RouterProfilesActivity.class)));
+  tile(shortcuts2,"التقارير",()->monitor("reports"));
+  page.addView(text("الكروت والطباعة",19,true));
+  LinearLayout print=panel("إدارة البطاقات");
+  action(print,"إنشاء الكروت والدفعات",BLUE,()->startActivity(new Intent(this,CardsActivity.class)));
+  action(print,"أرشيف الدفعات",TEAL(),()->startActivity(new Intent(this,BatchHistoryActivity.class)));
+  page.addView(text("الشبكة والخدمات",19,true));
+  LinearLayout services=panel("الخدمات المتاحة");
+  action(services,"تحديث معلومات الراوتر",BLUE,this::refresh);
+  action(services,"الجلسات والمتصلون",BLUE,()->open("sessions"));
+  action(services,"المراقبة",BLUE,()->monitor("monitoring"));
+  action(services,"Interfaces",BLUE,()->network("interfaces"));
+  action(services,"IP Addresses",BLUE,()->network("ip"));
+  action(services,"DHCP",BLUE,()->network("dhcp"));
+  action(services,"DNS",BLUE,()->network("dns"));
+  action(services,"Queues",BLUE,()->network("queues"));
+  action(services,"Firewall (قراءة)",BLUE,()->network("firewall"));
+  action(services,"الإعدادات",BLUE,()->open("settings"));
  }
- private void saveAndTest(){android.content.SharedPreferences.Editor e=getSharedPreferences("router_connection",MODE_PRIVATE).edit().putString("host",host.getText().toString().trim()).putString("port",port.getText().toString().trim()).putString("user",user.getText().toString().trim()).putBoolean("tls",tls.isChecked());if(!e.commit()){status.setText("تعذر حفظ الإعدادات");return;}try{new SecureConnectionStore(this).put(pass.getText().toString());}catch(Exception ex){status.setText("تعذر حفظ كلمة المرور عبر Keystore");return;}refresh();}
- private void refresh(){if(running)return;final String h=host.getText().toString().trim(),u=user.getText().toString().trim(),pw=pass.getText().toString();final int po;try{po=Integer.parseInt(port.getText().toString());}catch(Exception e){status.setText("منفذ غير صالح");return;}if(h.isEmpty()||u.isEmpty()){status.setText("العنوان واسم المستخدم مطلوبان");return;}running=true;status.setText("جاري الاتصال...");worker.execute(()->{try(RouterService r=new RouterService(h,po,tls.isChecked())){r.login(u,pw);List<Map<String,String>> x=r.execute("/system/resource/print","=.proplist=version,board-name,architecture-name,cpu-load,uptime,free-memory,total-memory");Map<String,String> m=x.isEmpty()?Collections.emptyMap():x.get(0);String s="RouterOS "+m.getOrDefault("version","غير معروف")+"\n"+m.getOrDefault("board-name","غير معروف")+" | CPU "+m.getOrDefault("cpu-load","--")+"%\nUptime: "+m.getOrDefault("uptime","--");ui(()->{running=false;status.setText("متصل");summary.setText(s);});}catch(Exception ex){ui(()->{running=false;status.setText("فشل الاتصال");summary.setText(ex.getMessage()==null?"خطأ غير معروف":ex.getMessage());});}});}
+ private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}
+ private int TEAL(){return Color.rgb(0,150,150);}
+ private LinearLayout panel(String title){
+  LinearLayout result=new LinearLayout(this);result.setOrientation(LinearLayout.VERTICAL);result.setPadding(dp(14),dp(12),dp(14),dp(14));
+  android.graphics.drawable.GradientDrawable bg=new android.graphics.drawable.GradientDrawable();bg.setColor(Color.WHITE);bg.setCornerRadius(dp(16));bg.setStroke(dp(1),Color.rgb(215,229,241));result.setBackground(bg);
+  LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.setMargins(0,dp(10),0,dp(14));page.addView(result,lp);
+  TextView heading=text(title,18,true);result.addView(heading);return result;
+ }
+ private void action(LinearLayout parent,String label,int color,Runnable runnable){
+  Button button=new Button(this);button.setText(label);button.setTextSize(15);button.setMinHeight(dp(50));button.setAllCaps(false);button.setTextColor(Color.WHITE);
+  button.setBackgroundTintList(android.content.res.ColorStateList.valueOf(color));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(52));lp.setMargins(0,dp(4),0,dp(4));parent.addView(button,lp);button.setOnClickListener(v->runnable.run());
+ }
+ private void tile(LinearLayout parent,String label,Runnable run){
+  TextView t=text(label,14,true);t.setGravity(Gravity.CENTER);t.setTextColor(NAVY);t.setMinHeight(dp(88));
+  android.graphics.drawable.GradientDrawable bg=new android.graphics.drawable.GradientDrawable();bg.setColor(Color.WHITE);bg.setCornerRadius(dp(14));bg.setStroke(dp(1),Color.rgb(215,229,241));t.setBackground(bg);
+  LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(92),1);lp.setMargins(dp(3),dp(5),dp(3),dp(5));parent.addView(t,lp);t.setOnClickListener(v->run.run());
+ }
+ private EditText field(LinearLayout parent,String hint,String value){
+  TextView label=text(hint,14,true);parent.addView(label);EditText e=new EditText(this);e.setSingleLine(true);e.setTextSize(17);e.setHint(hint);e.setText(value);e.setPadding(dp(12),dp(6),dp(12),dp(6));parent.addView(e,new LinearLayout.LayoutParams(-1,dp(52)));return e;
+ }
+ private void saveAndTest(){android.content.SharedPreferences.Editor e=getSharedPreferences("router_connection",MODE_PRIVATE).edit().putString("host",host.getText().toString().trim()).putString("port",port.getText().toString().trim()).putString("user",user.getText().toString().trim()).putBoolean("tls",tls.isChecked());if(!e.commit()){status.setText("تعذر حفظ الإعدادات");return;}try{if(!pass.getText().toString().isEmpty())new SecureConnectionStore(this).put(pass.getText().toString());}catch(Exception ex){status.setText("تعذر حفظ كلمة المرور عبر Keystore");return;}refresh();}
+ private void refresh(){if(running)return;final String h=host.getText().toString().trim(),u=user.getText().toString().trim();String password=pass.getText().toString();if(password.isEmpty())try{password=new SecureConnectionStore(this).get();}catch(Exception ignored){}final String pw=password;final int po;try{po=Integer.parseInt(port.getText().toString());}catch(Exception e){status.setText("منفذ غير صالح");return;}if(h.isEmpty()||u.isEmpty()){status.setText("العنوان واسم المستخدم مطلوبان");return;}running=true;status.setText("جاري الاتصال...");worker.execute(()->{try(RouterService r=new RouterService(h,po,tls.isChecked())){r.login(u,pw);List<Map<String,String>> x=r.execute("/system/resource/print","=.proplist=version,board-name,architecture-name,cpu-load,uptime,free-memory,total-memory");Map<String,String> m=x.isEmpty()?Collections.emptyMap():x.get(0);String s="RouterOS "+m.getOrDefault("version","غير معروف")+"\n"+m.getOrDefault("board-name","غير معروف")+" | CPU "+m.getOrDefault("cpu-load","--")+"%\nUptime: "+m.getOrDefault("uptime","--");ui(()->{running=false;status.setText("متصل");summary.setText(s);});}catch(Exception ex){ui(()->{running=false;status.setText("فشل الاتصال");summary.setText(ex.getMessage()==null?"خطأ غير معروف":ex.getMessage());});}});}
  private void network(String section){Intent i=new Intent(this,NetworkActivity.class);i.putExtra("section",section);startActivity(i);}
  private void monitor(String section){Intent i=new Intent(this,MonitoringActivity.class);i.putExtra("section",section);startActivity(i);}
  private void open(String section){Intent i=new Intent(this,ManagementActivity.class);i.putExtra("section",section);startActivity(i);}
- private EditText field(String hint,String value){EditText e=new EditText(this);e.setHint(hint);e.setText(value);e.setSingleLine(true);e.setTextSize(16);page.addView(e);return e;}private void button(String s,Runnable r){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextColor(Color.WHITE);b.setBackgroundTintList(android.content.res.ColorStateList.valueOf(BLUE));page.addView(b);b.setOnClickListener(v->r.run());}private TextView text(String s,int z,boolean bold){TextView t=new TextView(this);t.setText(s);t.setTextSize(z);t.setTextColor(NAVY);t.setPadding(8,10,8,10);if(bold)t.setTypeface(null,Typeface.BOLD);return t;}private void ui(Runnable r){runOnUiThread(r);}@Override protected void onDestroy(){worker.shutdownNow();super.onDestroy();}
+private TextView text(String s,int z,boolean bold){TextView t=new TextView(this);t.setText(s);t.setTextSize(z);t.setTextColor(NAVY);t.setPadding(8,10,8,10);if(bold)t.setTypeface(null,Typeface.BOLD);return t;}private void ui(Runnable r){runOnUiThread(r);}@Override protected void onDestroy(){worker.shutdownNow();super.onDestroy();}
 }
