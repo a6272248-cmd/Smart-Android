@@ -20,5 +20,5 @@ public final class BatchLedger {
     public void mark(String router,String name,State state){Card c=find(router,name);if(c==null)throw new IllegalArgumentException("Unknown card");c.state=state;}
     public List<Card> cards(){return Collections.unmodifiableList(cards);}
     public String encode(){StringBuilder b=new StringBuilder();for(Card c:cards)b.append(c.encode()).append('\n');return b.toString();}
-    public static BatchLedger decode(String value){BatchLedger l=new BatchLedger();if(value==null||value.isEmpty())return l;for(String line:value.split("\\n")){if(!line.isEmpty())l.cards.add(Card.decode(line));}return l;}
+    public static BatchLedger decode(String value){BatchLedger l=new BatchLedger();if(value==null||value.isEmpty())return l;for(String line:value.split("\\n")){if(!line.isEmpty()){Card c=Card.decode(line);if(l.find(c.router,c.name)!=null)throw new IllegalArgumentException("Duplicate card in batch ledger");l.cards.add(c);}}return l;}
 }
