@@ -3,7 +3,7 @@ package com.smartmanager.nativeapp;
 import android.app.*;import android.os.*;import android.content.*;import android.graphics.Color;import android.graphics.Typeface;import android.view.*;import android.widget.*;import java.util.*;import java.util.concurrent.*;
 /** Compact native dashboard. Feature screens live in dedicated Activities. */
 public final class MainActivity extends Activity {
- private LinearLayout connectionCard; private LinearLayout homeContent; private LinearLayout navBar; private final ExecutorService worker=Executors.newSingleThreadExecutor(); private LinearLayout page; private TextView status,summary,pppoeStat,hotspotStat,umStat; private EditText host,port,user,pass; private CheckBox tls; private boolean running; private final int NAVY=Color.rgb(8,25,49),BLUE=Color.rgb(23,125,238),ICE=Color.rgb(5,17,36);
+ private LinearLayout connectionCard; private LinearLayout navBar; private final ExecutorService worker=Executors.newSingleThreadExecutor(); private LinearLayout page; private TextView status,summary,pppoeStat,hotspotStat,umStat; private EditText host,port,user,pass; private CheckBox tls; private volatile boolean running; private final int NAVY=Color.rgb(8,25,49),BLUE=Color.rgb(23,125,238),ICE=Color.rgb(5,17,36);
  @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(NAVY);build();}
 
  private void build(){
@@ -19,6 +19,7 @@ public final class MainActivity extends Activity {
   LinearLayout statusPanel=panel("حالة الراوتر");
   status=text("غير متصل",17,true);statusPanel.addView(status);
   summary=text("معلومات الراوتر غير متاحة حتى يتم اختبار الاتصال",14,false);statusPanel.addView(summary);
+  action(statusPanel,"تحديث البيانات",BLUE,this::refresh);
   action(statusPanel,"إعداد الاتصال بالراوتر",BLUE,()->{connectionCard.setVisibility(connectionCard.getVisibility()==View.VISIBLE?View.GONE:View.VISIBLE);});
   android.content.SharedPreferences prefs=getSharedPreferences("router_connection",MODE_PRIVATE);
   page.addView(text("الأقسام الرئيسية",19,true));
@@ -39,6 +40,7 @@ public final class MainActivity extends Activity {
   pass.setInputType(0x81);
   tls=new CheckBox(this);tls.setText("اتصال API مشفّر TLS");tls.setTextSize(16);tls.setChecked(prefs.getBoolean("tls",false));connection.addView(tls);
   action(connection,"حفظ واختبار الاتصال",BLUE,this::saveAndTest);
+  if(!prefs.getString("host","").trim().isEmpty())refresh();
   // Connection configuration is intentionally a separate expandable panel, not part of the home feed.
   nav("الرئيسية",()->{scroll.smoothScrollTo(0,0);});
   nav("المستخدمون",()->showUsers());
@@ -82,7 +84,37 @@ public final class MainActivity extends Activity {
   TextView label=text(hint,14,true);parent.addView(label);EditText e=new EditText(this);e.setSingleLine(true);e.setTextSize(17);e.setHint(hint);e.setText(value);e.setPadding(dp(12),dp(6),dp(12),dp(6));e.setTextColor(Color.WHITE);e.setHintTextColor(Color.rgb(152,188,220));parent.addView(e,new LinearLayout.LayoutParams(-1,dp(52)));return e;
  }
  private void saveAndTest(){android.content.SharedPreferences.Editor e=getSharedPreferences("router_connection",MODE_PRIVATE).edit().putString("host",host.getText().toString().trim()).putString("port",port.getText().toString().trim()).putString("user",user.getText().toString().trim()).putBoolean("tls",tls.isChecked());if(!e.commit()){status.setText("تعذر حفظ الإعدادات");return;}try{if(!pass.getText().toString().isEmpty())new SecureConnectionStore(this).put(pass.getText().toString());}catch(Exception ex){status.setText("تعذر حفظ كلمة المرور عبر Keystore");return;}refresh();}
- private void refresh(){if(running)return;final String h=host.getText().toString().trim(),u=user.getText().toString().trim();String password=pass.getText().toString();if(password.isEmpty())try{password=new SecureConnectionStore(this).get();}catch(Exception ignored){}final String pw=password;final int po;try{po=Integer.parseInt(port.getText().toString());}catch(Exception e){status.setText("منفذ غير صالح");return;}if(h.isEmpty()||u.isEmpty()){status.setText("العنوان واسم المستخدم مطلوبان");return;}running=true;status.setText("جاري الاتصال...");worker.execute(()->{try(RouterService r=new RouterService(h,po,tls.isChecked())){r.login(u,pw);List<Map<String,String>> x=r.execute("/system/resource/print","=.proplist=version,board-name,architecture-name,cpu-load,uptime,free-memory,total-memory");Map<String,String> m=x.isEmpty()?Collections.emptyMap():x.get(0);String s="RouterOS "+m.getOrDefault("version","غير معروف")+"\n"+m.getOrDefault("board-name","غير معروف")+" | CPU "+m.getOrDefault("cpu-load","--")+"%\nUptime: "+m.getOrDefault("uptime","--");List<Map<String,String>> hp=r.execute("/ip/hotspot/active/print","=.proplist=.id");List<Map<String,String>> pp=r.execute("/ppp/active/print","=.proplist=.id");final int hc=hp.size(),pc=pp.size();ui(()->{running=false;status.setText("متصل");summary.setText(s);hotspotStat.setText(String.valueOf(hc));pppoeStat.setText(String.valueOf(pc));umStat.setText("—");});}catch(Exception ex){ui(()->{running=false;status.setText("فشل الاتصال");hotspotStat.setText("—");pppoeStat.setText("—");umStat.setText("—");summary.setText(ex.getMessage()==null?"خطأ غير معروف":ex.getMessage());});}});}
+ private void refresh(){
+  if(running)return;
+  final String h=host.getText().toString().trim(),u=user.getText().toString().trim();
+  String password=pass.getText().toString();
+  if(password.isEmpty())try{password=new SecureConnectionStore(this).get();}catch(Exception ignored){}
+  final String pw=password;final int po;
+  try{po=Integer.parseInt(port.getText().toString());if(po<1||po>65535)throw new NumberFormatException();}
+  catch(Exception e){status.setText("منفذ غير صالح");return;}
+  if(h.isEmpty()||u.isEmpty()){status.setText("العنوان واسم المستخدم مطلوبان");return;}
+  final boolean secure=tls.isChecked();
+  running=true;status.setText("جاري الاتصال...");
+  worker.execute(()->{
+   try(RouterService r=new RouterService(h,po,secure)){
+    r.login(u,pw);
+    List<Map<String,String>> resources=r.execute("/system/resource/print","=.proplist=version,board-name,architecture-name,cpu-load,uptime,free-memory,total-memory");
+    Map<String,String> m=resources.isEmpty()?Collections.emptyMap():resources.get(0);
+    String version=m.getOrDefault("version","");
+    String info="RouterOS "+(version.isEmpty()?"غير معروف":version)+"\\n"+m.getOrDefault("board-name","غير معروف")+" | CPU "+m.getOrDefault("cpu-load","--")+"%\\nUptime: "+m.getOrDefault("uptime","--");
+    String hs=countSafe(r,"/ip/hotspot/active/print");
+    String pp=countSafe(r,"/ppp/active/print");
+    String um="—";
+    try{um=String.valueOf(new UserManagerService(r).users(version).size());}catch(Exception ignored){}
+    final String hotspot=hs,pppoe=pp,manager=um;
+    ui(()->{running=false;status.setText("متصل");summary.setText(info);hotspotStat.setText(hotspot);pppoeStat.setText(pppoe);umStat.setText(manager);});
+   }catch(Exception ex){
+    ui(()->{running=false;status.setText("فشل الاتصال");hotspotStat.setText("—");pppoeStat.setText("—");umStat.setText("—");summary.setText(ex.getMessage()==null?"خطأ غير معروف":ex.getMessage());});
+   }
+  });
+ }
+ private String countSafe(RouterService router,String command){try{return String.valueOf(router.execute(command,"=.proplist=.id").size());}catch(Exception ignored){return "—";}}
+
  private void network(String section){Intent i=new Intent(this,NetworkActivity.class);i.putExtra("section",section);startActivity(i);}
  private void monitor(String section){Intent i=new Intent(this,MonitoringActivity.class);i.putExtra("section",section);startActivity(i);}
  private void open(String section){Intent i=new Intent(this,ManagementActivity.class);i.putExtra("section",section);startActivity(i);}
