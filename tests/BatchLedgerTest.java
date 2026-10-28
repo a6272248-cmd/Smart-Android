@@ -11,7 +11,7 @@ public class BatchLedgerTest {
     boolean rejectedCorruption=false;
     try { BatchLedger.decode(saved+saved); } catch(IllegalArgumentException expected) { rejectedCorruption=true; }
     if(!rejectedCorruption)throw new AssertionError("duplicate stored rows must be rejected");
-    BatchLedger distinct=BatchLedger.decode(saved+"r2|SM0000001|other|basic|CONFIRMED\\n");
+    BatchLedger distinct=BatchLedger.decode(saved+"r2|SM0000001|other|basic|CONFIRMED\n");
     if(distinct.cards().size()!=2)throw new AssertionError("distinct router identities must survive archive restore");
     System.out.println("PASS: encrypted-journal payload state, recovery, duplicate and router isolation model");
   }
