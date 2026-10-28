@@ -30,7 +30,7 @@ jobs:
       - name: Test MikroTik API
         run: |
           mkdir -p /tmp/sm-tests
-          javac -d /tmp/sm-tests app/src/main/java/com/smartmanager/nativeapp/RouterApi.java app/src/main/java/com/smartmanager/nativeapp/RouterService.java app/src/main/java/com/smartmanager/nativeapp/VoucherService.java app/src/main/java/com/smartmanager/nativeapp/UserManagerService.java app/src/main/java/com/smartmanager/nativeapp/BatchLedger.java app/src/main/java/com/smartmanager/nativeapp/BatchReconciler.java app/src/main/java/com/smartmanager/nativeapp/RouterIdentity.java app/src/main/java/com/smartmanager/nativeapp/PdfLayout.java tests/ApiProtocolTest.java tests/ApiMockServerTest.java tests/RouterAddDisconnectMockTest.java tests/VoucherServiceTest.java tests/UserManagerServiceTest.java tests/CommandValidationTest.java tests/StateToggleTest.java tests/BatchLedgerTest.java tests/BatchReconciliationMockTest.java tests/PdfLayoutTest.java
+          javac -d /tmp/sm-tests app/src/main/java/com/smartmanager/nativeapp/RouterApi.java app/src/main/java/com/smartmanager/nativeapp/RouterService.java app/src/main/java/com/smartmanager/nativeapp/VoucherService.java app/src/main/java/com/smartmanager/nativeapp/UserManagerService.java app/src/main/java/com/smartmanager/nativeapp/BatchLedger.java app/src/main/java/com/smartmanager/nativeapp/BatchReconciler.java app/src/main/java/com/smartmanager/nativeapp/RouterIdentity.java app/src/main/java/com/smartmanager/nativeapp/BatchArchive.java app/src/main/java/com/smartmanager/nativeapp/PdfLayout.java tests/ApiProtocolTest.java tests/ApiMockServerTest.java tests/RouterAddDisconnectMockTest.java tests/VoucherServiceTest.java tests/UserManagerServiceTest.java tests/CommandValidationTest.java tests/StateToggleTest.java tests/BatchLedgerTest.java tests/BatchReconciliationMockTest.java tests/BatchArchiveTest.java tests/PdfLayoutTest.java
           java -cp /tmp/sm-tests ApiProtocolTest
           java -cp /tmp/sm-tests ApiMockServerTest
           java -cp /tmp/sm-tests RouterAddDisconnectMockTest
@@ -40,6 +40,7 @@ jobs:
           java -cp /tmp/sm-tests StateToggleTest
           java -cp /tmp/sm-tests BatchLedgerTest
           java -cp /tmp/sm-tests BatchReconciliationMockTest
+          java -cp /tmp/sm-tests BatchArchiveTest
           java -cp /tmp/sm-tests PdfLayoutTest
 
       - name: Build APK
