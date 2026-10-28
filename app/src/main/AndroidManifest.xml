@@ -1,9 +1,23 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
  <uses-permission android:name="android.permission.INTERNET"/>
  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
- <application android:label="Smart Manager" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:usesCleartextTraffic="true" android:allowBackup="false" android:supportsRtl="true">
+ <application android:label="Smart Manager" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:usesCleartextTraffic="false" android:allowBackup="false" android:supportsRtl="true">
   <activity android:name=".MainActivity" android:exported="true" android:windowSoftInputMode="adjustResize">
    <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
   </activity>
+  <activity android:name=".RouterActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+  <activity android:name=".RouterProfilesActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+  <activity android:name=".ResourceDetailActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+  <activity android:name=".NetworkActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+  <activity android:name=".MonitoringActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+  <activity android:name=".ManagementActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+  <activity android:name=".TemplateActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+  <activity android:name=".PrintPreviewActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+  <activity android:name=".ArchivePrintActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+  <activity android:name=".CardsActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+  <activity android:name=".CardOperationsActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+  <activity android:name=".ExpiredCardsActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+  <activity android:name=".UserManagerMaintenanceActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+  <activity android:name=".BatchHistoryActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
  </application>
 </manifest>
