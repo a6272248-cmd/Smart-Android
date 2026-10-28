@@ -6,6 +6,7 @@
    <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
   </activity>
   <activity android:name=".RouterActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+  <activity android:name=".RouterProfilesActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
   <activity android:name=".ResourceDetailActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
   <activity android:name=".NetworkActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
   <activity android:name=".ManagementActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
