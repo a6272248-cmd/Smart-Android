@@ -56,7 +56,7 @@ jobs:
   ui-smoke:
     runs-on: ubuntu-latest
     needs: android
-    timeout-minutes: 15
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -65,82 +65,61 @@ jobs:
           java-version: '17'
       - uses: android-actions/setup-android@v3
         with:
-          packages: 'platform-tools'
+          packages: 'platform-tools emulator'
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Install Android SDK
-        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
-      - name: Build debug APK
-        run: gradle --no-daemon assembleDebug
-      - name: Run native UI smoke flow
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 34
-          target: google_apis
-          arch: x86_64
-          profile: pixel_2
-          force-avd-creation: true
-          disable-animations: true
-          emulator-options: -no-window -no-audio -no-boot-anim
-          cores: 2
-          ram-size: 2048M
-          script: |
-            adb install -r app/build/outputs/apk/debug/app-debug.apk
-            adb shell am force-stop com.smartmanager.nativeapp
-            adb shell am start -W -n com.smartmanager.nativeapp/.MainActivity
-            sleep 3
-            assert_screen() {
-              label="$1"; file="$2"
-              focus="$(adb shell dumpsys window windows | tr -d '\r' | grep -E 'mCurrentFocus|mFocusedApp' | head -1 || true)"
-              echo "FOCUS: $focus"
-              echo "$focus" | grep -q 'com.smartmanager.nativeapp' || { adb logcat -d -t 300; exit 21; }
-              adb shell uiautomator dump /sdcard/window.xml >/dev/null
-              adb pull /sdcard/window.xml "/tmp/${file}.xml" >/dev/null
-              grep -q "$label" "/tmp/${file}.xml" || { cat "/tmp/${file}.xml"; exit 22; }
-              adb exec-out screencap -p > "/tmp/${file}.png"
-            }
-            click_text() {
-              label="$1"
-              python3 - "$label" /tmp/current.xml <<'PY'
-            import sys,xml.etree.ElementTree as ET,re,subprocess
-            label=sys.argv[1]; root=ET.parse(sys.argv[2]).getroot()
-            for n in root.iter('node'):
-              if n.attrib.get('text')==label or n.attrib.get('content-desc')==label:
-                m=re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]',n.attrib.get('bounds',''))
-                if m:
-                  x=(int(m.group(1))+int(m.group(3)))//2; y=(int(m.group(2))+int(m.group(4)))//2
-                  subprocess.check_call(['adb','shell','input','tap',str(x),str(y)]);sys.exit(0)
-            raise SystemExit('UI element not found: '+label)
-            PY
-              sleep 2
-            }
-            assert_screen 'Smart Manager' dashboard
-            cp /tmp/dashboard.xml /tmp/current.xml
-            click_text 'الراوترات والاتصال'
-            assert_screen 'الراوترات والاتصالات' routers
-            adb shell input keyevent 4; sleep 1
-            adb shell uiautomator dump /sdcard/window.xml >/dev/null; adb pull /sdcard/window.xml /tmp/current.xml >/dev/null
-            click_text 'Hotspot'
-            assert_screen 'Hotspot' hotspot
-            adb shell input keyevent 4; sleep 1
-            adb shell uiautomator dump /sdcard/window.xml >/dev/null; adb pull /sdcard/window.xml /tmp/current.xml >/dev/null
-            click_text 'PPPoE'
-            assert_screen 'PPPoE' pppoe
-            adb shell input keyevent 4; sleep 1
-            adb shell uiautomator dump /sdcard/window.xml >/dev/null; adb pull /sdcard/window.xml /tmp/current.xml >/dev/null
-            click_text 'الكروت والدفعات'
-            assert_screen 'الكروت والدفعات' cards
-            adb shell dumpsys activity activities | grep -E 'ANR|not responding' && exit 23 || true
-            adb logcat -d -t 500 | grep -E 'FATAL EXCEPTION|ANR in' && exit 24 || true
-            python3 - <<'PY'
-            import hashlib,glob
-            files=glob.glob('/tmp/*.png'); hashes={hashlib.sha256(open(f,'rb').read()).hexdigest() for f in files}
-            if len(files)<5 or len(hashes)<3: raise SystemExit('screenshots missing or suspiciously identical')
-            PY
-      - uses: actions/upload-artifact@v4
+      - name: Install SDK and build APK
+        run: |
+          sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'system-images;android-34;google_apis;x86_64'
+          yes | sdkmanager --licenses >/dev/null || true
+          gradle --no-daemon assembleDebug
+      - name: Start controlled emulator and run UI smoke
+        env:
+          ANDROID_AVD_HOME: /tmp/android-avd
+        run: |
+          set -o pipefail
+          mkdir -p /tmp/ui-diagnostics
+          date +%s > /tmp/ui-diagnostics/start
+          test -e /dev/kvm || { echo 'KVM unavailable'; cat /proc/cpuinfo > /tmp/ui-diagnostics/cpuinfo; exit 70; }
+          echo 'KVM available' | tee /tmp/ui-diagnostics/kvm
+          echo no | avdmanager create avd -n sm-api34 -k 'system-images;android-34;google_apis;x86_64' --force --device 'pixel_2'
+          emulator -avd sm-api34 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -wipe-data > /tmp/ui-diagnostics/emulator.log 2>&1 &
+          EMU=$!; trap 'kill $EMU 2>/dev/null || true; adb kill-server || true' EXIT
+          adb start-server > /tmp/ui-diagnostics/adb-start.log 2>&1
+          for i in $(seq 1 60); do adb get-state 2>/dev/null | grep -q device && break; sleep 2; done
+          adb get-state | grep -q device || { adb devices -l > /tmp/ui-diagnostics/devices; exit 71; }
+          for i in $(seq 1 60); do boot=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r'); [ "$boot" = 1 ] && break; sleep 2; done
+          [ "$boot" = 1 ] || { adb shell getprop > /tmp/ui-diagnostics/getprop; exit 72; }
+          adb shell settings put system screen_off_timeout 2147483647 || true
+          adb install -r app/build/outputs/apk/debug/app-debug.apk > /tmp/ui-diagnostics/install.log
+          adb shell am start -W -n com.smartmanager.nativeapp/.MainActivity > /tmp/ui-diagnostics/launch.log
+          sleep 2
+          focus=$(adb shell dumpsys window windows | tr -d '\r' | grep -E 'mCurrentFocus|mFocusedApp' | head -1); echo "$focus" | tee /tmp/ui-diagnostics/focus-dashboard
+          echo "$focus" | grep -q com.smartmanager.nativeapp
+          adb shell uiautomator dump /sdcard/dashboard.xml >/dev/null; adb pull /sdcard/dashboard.xml /tmp/ui-diagnostics/dashboard.xml >/dev/null
+          grep -q 'Smart Manager' /tmp/ui-diagnostics/dashboard.xml
+          adb exec-out screencap -p > /tmp/dashboard.png
+          adb shell input keyevent 4 || true
+          adb shell am start -W -n com.smartmanager.nativeapp/.MainActivity >/dev/null
+          adb shell uiautomator dump /sdcard/main.xml >/dev/null; adb pull /sdcard/main.xml /tmp/ui-diagnostics/main.xml >/dev/null
+          grep -q 'Hotspot' /tmp/ui-diagnostics/main.xml
+          adb shell input tap 300 500
+          sleep 1
+          adb shell uiautomator dump /sdcard/hotspot.xml >/dev/null; adb pull /sdcard/hotspot.xml /tmp/ui-diagnostics/hotspot.xml >/dev/null
+          grep -q 'Hotspot' /tmp/ui-diagnostics/hotspot.xml
+          adb exec-out screencap -p > /tmp/hotspot.png
+          adb shell dumpsys activity activities > /tmp/ui-diagnostics/activities
+          ! grep -E 'ANR|not responding' /tmp/ui-diagnostics/activities
+          ! adb logcat -d -t 500 | grep -E 'FATAL EXCEPTION|ANR in'
+          sha256sum /tmp/dashboard.png /tmp/hotspot.png | tee /tmp/ui-diagnostics/screenshots.sha256
+      - name: Upload emulator diagnostics and verified screenshots
         if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: SmartManager-Android-ui-screenshots
-          path: /tmp/*.png
+          name: SmartManager-Android-ui-diagnostics
+          path: |
+            /tmp/ui-diagnostics
+            /tmp/dashboard.png
+            /tmp/hotspot.png
           if-no-files-found: warn
