@@ -47,7 +47,7 @@ public final class ScreenNavigator {
     private static void scrollTo(LinearLayout page, ScrollView content, String anchor) {
         for(int i=0;i<page.getChildCount();i++) { View v=page.getChildAt(i); if(v instanceof TextView && anchor.contentEquals(((TextView)v).getText())) { v.post(()->content.smoothScrollTo(0,v.getTop())); return; } }
     }
-    private static void open(Activity activity,String section){ android.content.Intent intent=new android.content.Intent(activity,ManagementActivity.class); intent.putExtra("section",section); activity.startActivity(intent); }
+    private static void open(Activity activity,String section){ android.content.Intent intent; if("cards".equals(section)) intent=new android.content.Intent(activity,CardsActivity.class); else { intent=new android.content.Intent(activity,ManagementActivity.class); intent.putExtra("section",section); } activity.startActivity(intent); }
     private static LinearLayout bar(Activity a, boolean vertical) { LinearLayout l=new LinearLayout(a); l.setOrientation(vertical?LinearLayout.VERTICAL:LinearLayout.HORIZONTAL); l.setGravity(Gravity.CENTER_VERTICAL); l.setPadding(8,4,8,4); l.setBackgroundColor(ICE); l.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); return l; }
     private static TextView label(Activity a,String s,int size,boolean bold){ TextView t=new TextView(a);t.setText(s);t.setTextSize(size);t.setTextColor(NAVY);t.setTypeface(null,bold?1:0);t.setPadding(14,0,14,0);return t; }
     private static Button button(Activity a,String s,int color){ Button b=new Button(a);b.setText(s);b.setTextSize(12);b.setAllCaps(false);b.setTextColor(Color.WHITE);b.setBackgroundTintList(android.content.res.ColorStateList.valueOf(color));return b; }
