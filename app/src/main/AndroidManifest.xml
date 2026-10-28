@@ -13,6 +13,7 @@
   <activity android:name=".ManagementActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
   <activity android:name=".TemplateActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
   <activity android:name=".PrintPreviewActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+  <activity android:name=".ArchivePrintActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
   <activity android:name=".CardsActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
   <activity android:name=".CardOperationsActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
   <activity android:name=".ExpiredCardsActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
