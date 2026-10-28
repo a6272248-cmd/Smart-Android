@@ -14,9 +14,9 @@ public final class MainActivity extends Activity {
   page.addView(banner,new LinearLayout.LayoutParams(-1,dp(138)));
   TextView heading=text("Smart MikroTik Manager",24,true);heading.setGravity(Gravity.CENTER_VERTICAL);page.addView(heading);
   page.addView(text("إدارة الشبكة والكروت من مكان واحد",15,false));
-  LinearLayout quickHeader=panel("التحكم السريع");quickHeader.addView(text("اختر القسم المطلوب، أو افتح اتصال الراوتر لإظهار بيانات الجهاز الحقيقية",14,false));
   LinearLayout statusPanel=panel("حالة الراوتر");
-  TextView connectionHint=text("معلومات الاتصال تُعرض بعد اختبار الراوتر",14,false);statusPanel.addView(connectionHint);
+  status=text("غير متصل",17,true);statusPanel.addView(status);
+  summary=text("معلومات الراوتر غير متاحة حتى يتم اختبار الاتصال",14,false);statusPanel.addView(summary);
   action(statusPanel,"إعداد الاتصال بالراوتر",BLUE,()->{connectionCard.setVisibility(connectionCard.getVisibility()==View.VISIBLE?View.GONE:View.VISIBLE);});
   android.content.SharedPreferences prefs=getSharedPreferences("router_connection",MODE_PRIVATE);
   page.addView(text("الوصول السريع",19,true));
@@ -37,8 +37,6 @@ public final class MainActivity extends Activity {
   pass.setInputType(0x81);
   tls=new CheckBox(this);tls.setText("اتصال API مشفّر TLS");tls.setTextSize(16);tls.setChecked(prefs.getBoolean("tls",false));connection.addView(tls);
   action(connection,"حفظ واختبار الاتصال",BLUE,this::saveAndTest);
-  status=text("غير متصل",17,true);connection.addView(status);
-  summary=text("سيظهر إصدار RouterOS ومعلومات الجهاز بعد الاتصال",14,false);connection.addView(summary);
   page.addView(text("الكروت والطباعة",19,true));
   LinearLayout print=panel("إدارة البطاقات");
   action(print,"إنشاء الكروت والدفعات",BLUE,()->startActivity(new Intent(this,CardsActivity.class)));
@@ -52,9 +50,6 @@ public final class MainActivity extends Activity {
   serviceRow(services,"DHCP",()->network("dhcp"),"DNS",()->network("dns"));
   serviceRow(services,"Queues",()->network("queues"),"Firewall (قراءة)",()->network("firewall"));
   action(services,"الإعدادات",BLUE,()->open("settings"));
-  LinearLayout bottom=panel("التنقل السريع");
-  serviceRow(bottom,"الرئيسية",()->scroll.smoothScrollTo(0,0),"المستخدمون",()->open("hotspot"));
-  serviceRow(bottom,"الكروت",()->startActivity(new Intent(this,CardsActivity.class)),"الراوترات",()->startActivity(new Intent(this,RouterProfilesActivity.class)));
  }
  private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}
  private int TEAL(){return Color.rgb(0,150,150);}
