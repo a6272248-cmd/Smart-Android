@@ -1,5 +1,5 @@
 package com.smartmanager.nativeapp;
-import android.app.*;import android.os.*;import android.graphics.Color;import android.graphics.Typeface;import android.view.*;import android.widget.*;import java.util.*;import java.util.concurrent.*;
+import android.app.*;import android.content.Intent;import android.os.*;import android.graphics.Color;import android.graphics.Typeface;import android.view.*;import android.widget.*;import java.util.*;import java.util.concurrent.*;
 /** Shared native tabbed manager for Hotspot, PPPoE and User Manager. */
 public final class ManagementActivity extends Activity {
  private LinearLayout page,tabs;private ListView list;private EditText search;private TextView status;private String section,tab="users";private List<Map<String,String>> rows=new ArrayList<>();private final ArrayList<Map<String,String>> visibleRows=new ArrayList<>();private final ExecutorService worker=Executors.newSingleThreadExecutor();private boolean writing;private final int NAVY=Color.rgb(22,47,80),BLUE=Color.rgb(23,103,177),TEAL=Color.rgb(22,166,166);
