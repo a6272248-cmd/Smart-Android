@@ -3,13 +3,13 @@ package com.smartmanager.nativeapp;
 import android.app.*;import android.os.*;import android.content.*;import android.graphics.Color;import android.graphics.Typeface;import android.view.*;import android.widget.*;import java.util.*;import java.util.concurrent.*;
 /** Compact native dashboard. Feature screens live in dedicated Activities. */
 public final class MainActivity extends Activity {
- private LinearLayout connectionCard; private final ExecutorService worker=Executors.newSingleThreadExecutor(); private LinearLayout page; private TextView status,summary; private EditText host,port,user,pass; private CheckBox tls; private boolean running; private final int NAVY=Color.rgb(8,25,49),BLUE=Color.rgb(23,125,238),ICE=Color.rgb(5,17,36);
+ private LinearLayout connectionCard; private LinearLayout homeContent; private LinearLayout navBar; private final ExecutorService worker=Executors.newSingleThreadExecutor(); private LinearLayout page; private TextView status,summary; private EditText host,port,user,pass; private CheckBox tls; private boolean running; private final int NAVY=Color.rgb(8,25,49),BLUE=Color.rgb(23,125,238),ICE=Color.rgb(5,17,36);
  @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(NAVY);build();}
 
  private void build(){
   ScrollView scroll=new ScrollView(this);scroll.setFillViewport(true);
   page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);page.setPadding(dp(16),dp(14),dp(16),dp(26));page.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);page.setBackgroundColor(ICE);
-  scroll.addView(page);setContentView(scroll);
+  scroll.addView(page); LinearLayout shell=new LinearLayout(this);shell.setOrientation(LinearLayout.VERTICAL);shell.setBackgroundColor(ICE);shell.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));navBar=new LinearLayout(this);navBar.setOrientation(LinearLayout.HORIZONTAL);navBar.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);navBar.setPadding(dp(5),dp(5),dp(5),dp(5));navBar.setBackgroundColor(NAVY);shell.addView(navBar,new LinearLayout.LayoutParams(-1,dp(68)));setContentView(shell);
   android.widget.ImageView banner=new android.widget.ImageView(this);banner.setImageResource(R.drawable.smart_manager_banner);banner.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);banner.setContentDescription("Smart Manager");
   page.addView(banner,new LinearLayout.LayoutParams(-1,dp(138)));
   TextView heading=text("Smart MikroTik Manager",24,true);heading.setGravity(Gravity.CENTER_VERTICAL);page.addView(heading);
@@ -37,20 +37,16 @@ public final class MainActivity extends Activity {
   pass.setInputType(0x81);
   tls=new CheckBox(this);tls.setText("اتصال API مشفّر TLS");tls.setTextSize(16);tls.setChecked(prefs.getBoolean("tls",false));connection.addView(tls);
   action(connection,"حفظ واختبار الاتصال",BLUE,this::saveAndTest);
-  page.addView(text("الكروت والطباعة",19,true));
-  LinearLayout print=panel("إدارة البطاقات");
-  action(print,"إنشاء الكروت والدفعات",BLUE,()->startActivity(new Intent(this,CardsActivity.class)));
-  action(print,"أرشيف الدفعات",TEAL(),()->startActivity(new Intent(this,BatchHistoryActivity.class)));
-  page.addView(text("الشبكة والخدمات",19,true));
-  LinearLayout services=panel("الخدمات المتاحة");
-  action(services,"تحديث معلومات الراوتر",BLUE,this::refresh);
-  action(services,"الجلسات والمتصلون",BLUE,()->open("sessions"));
-  action(services,"المراقبة",BLUE,()->monitor("monitoring"));
-  serviceRow(services,"Interfaces",()->network("interfaces"),"IP Addresses",()->network("ip"));
-  serviceRow(services,"DHCP",()->network("dhcp"),"DNS",()->network("dns"));
-  serviceRow(services,"Queues",()->network("queues"),"Firewall (قراءة)",()->network("firewall"));
-  action(services,"الإعدادات",BLUE,()->open("settings"));
+  // Connection configuration is intentionally a separate expandable panel, not part of the home feed.
+  nav("الرئيسية",()->{scroll.smoothScrollTo(0,0);});
+  nav("المستخدمون",()->open("hotspot"));
+  nav("الكروت",()->startActivity(new Intent(this,CardsActivity.class)));
+  nav("الشبكة",()->network("interfaces"));
+  nav("المزيد",()->showMore());
+
  }
+ private void nav(String label,Runnable callback){TextView item=text(label,12,true);item.setGravity(Gravity.CENTER);item.setMinHeight(dp(52));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(54),1);lp.setMargins(dp(2),0,dp(2),0);navBar.addView(item,lp);item.setOnClickListener(v->callback.run());}
+ private void showMore(){String[] choices={"الراوترات المحفوظة","اتصال الراوتر","أرشيف الدفعات","المراقبة","التقارير","الجلسات والمتصلون","إعدادات الشبكة","الإعدادات"};new AlertDialog.Builder(this).setTitle("المزيد").setItems(choices,(d,i)->{switch(i){case 0:startActivity(new Intent(this,RouterProfilesActivity.class));break;case 1:connectionCard.setVisibility(View.VISIBLE);break;case 2:startActivity(new Intent(this,BatchHistoryActivity.class));break;case 3:monitor("monitoring");break;case 4:monitor("reports");break;case 5:open("sessions");break;case 6:network("dhcp");break;default:open("settings");}}).show();}
  private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}
  private int TEAL(){return Color.rgb(0,150,150);}
  private LinearLayout panel(String title){
