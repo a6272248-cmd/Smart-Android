@@ -35,7 +35,7 @@ public final class MainActivity extends Activity {
   connection.addView(text("أدخل بيانات الراوتر، ثم احفظ الاتصال واختبره",14,false));
   host=field(connection,"عنوان الراوتر أو IP",prefs.getString("host",""));
   port=field(connection,"منفذ API",prefs.getString("port","8728"));
-  user=field(connection,"اسم المستخدم",prefs.getString("user","admin"));
+  user=field(connection,"اسم المستخدم",prefs.getString("user",""));
   pass=field(connection,"كلمة المرور (اتركها فارغة للإبقاء على المحفوظة)","");
   pass.setInputType(0x81);
   tls=new CheckBox(this);tls.setText("اتصال API مشفّر TLS");tls.setTextSize(16);tls.setChecked(prefs.getBoolean("tls",false));connection.addView(tls);
