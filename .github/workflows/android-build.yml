@@ -9,7 +9,7 @@ on:
         default: false
         type: boolean
   push:
-    branches: [main, codex/development-audit, 'compat/android-7-api25-test', 'design/native-navigation-v2']
+    branches: [main, codex/development-audit, 'compat/android-7-api25-test', 'design/native-navigation-v2', 'development/preserve-full-native-direct-api']
 
 jobs:
   visual-review:
